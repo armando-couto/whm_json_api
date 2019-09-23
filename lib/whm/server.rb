@@ -6,27 +6,27 @@ module Whm #:nodoc:
 
     # Hostname of the WHM server (e.g., <tt>dedicated.server.com</tt>)
     attr_reader :host
-    
-    # WHM XML-API username
+
+    # WHM JSON-API username
     attr_reader :username
-    
-    # WHM XML-API password. Use this, or the remote key, to authenticate with the server
+
+    # WHM JSON-API password. Use this, or the remote key, to authenticate with the server
     attr_reader :password
-    
-    # WHM XML-API remote key. Use this, or the password, to authenticate with the server
+
+    # WHM JSON-API remote key. Use this, or the password, to authenticate with the server
     attr_reader :remote_key
-    
+
     # If you'd like increased verbosity of commands, set this to <tt>true</tt>. Defaults to <tt>false</tt>
     attr_accessor :debug
-    
+
     # By default, SSL is enable. Set to <tt>false</tt> to disable it.
     attr_accessor :ssl
-    
+
     # By default, we connect on port 2087. Set this to another integer to change it.
     attr_accessor :port
-    
+
     attr_accessor :attributes
-    
+
     # Initialize the connection with WHM using the hostname, 
     # user and password/remote key. Will default to asking for 
     # a password, but remote_key is required if a password 
@@ -55,22 +55,22 @@ module Whm #:nodoc:
     def initialize(options = {})
       requires!(options, :host, :username)
       requires!(options, :password) unless options[:remote_key]
-      
-      @host       = options[:host]
-      @username   = options[:username] || "root"
+
+      @host = options[:host]
+      @username = options[:username] || "root"
       @remote_key = options[:remote_key].gsub(/(\r|\n)/, "") unless options[:password]
-      @password   = options[:password] unless options[:remote_key]
-      @debug      = options[:debug] || false
-      @port       = options[:port] || 2087
-      @ssl        = options[:ssl] || true
+      @password = options[:password] unless options[:remote_key]
+      @debug = options[:debug] || false
+      @port = options[:port] || 2087
+      @ssl = options[:ssl] || true
     end
-      
+
     # Finds all accounts
     #
     def accounts(options = {})
       summary = self.list_accounts(options)
       summary = [summary] unless summary.is_a? Array
-      summary.collect { |attributes| Account.new(attributes) }
+      summary.collect {|attributes| Account.new(attributes)}
     end
 
     # Find an account
@@ -81,37 +81,37 @@ module Whm #:nodoc:
       summary = self.account_summary(:user => name)
       build_account(summary)
     end
-    
+
     # Finds all packages
     #
     def packages(options = {})
       summary = self.list_packages
       summary = [summary] unless summary.is_a? Array
-      summary.collect { |attributes| Package.new(attributes)}
+      summary.collect {|attributes| Package.new(attributes)}
     end
-    
+
     # Displays pertient account information for a specific account.
     #
     # ==== Options
     # * <tt>:user</tt> - Username associated with the acount to display (string)
     def account_summary(options = {})
       requires!(options, :user)
-      
-      data = get_xml(:url => "accountsummary", :params => options)
+
+      data = get_json(:url => "accountsummary", :key => 'cpsess6131206390', :params => options)
       check_for_cpanel_errors_on(data)["acct"]
     end
-    
+
     # Displays the total bandwidth used (in bytes) used by an account
     # ==== Options
     # * <tt>:user</tt> - username associtated with the account to display (string)
     def account_total_bandwidth(options = {})
       requires!(options, :user)
-      
-      params = { :searchtype => 'user', :search => options[:user] }
-      data = get_xml(:url => "showbw", :params => params)
+
+      params = {:searchtype => 'user', :search => options[:user]}
+      data = get_json(:url => "showbw", :key => 'cpsess6131206390', :params => params)
       check_for_cpanel_errors_on(data)["bandwidth"]["totalused"]
     end
-    
+
     # Changes the password of a domain owner (cPanel) or reseller (WHM) account.
     #
     # ==== Options
@@ -119,11 +119,11 @@ module Whm #:nodoc:
     # * <tt>:pass</tt> - New password for that user (string)
     def change_account_password(options = {})
       requires!(options, :user, :pass)
-      
-      data = get_xml(:url => "passwd", :params => options)
-	    check_for_cpanel_errors_on(data)["passwd"]
+
+      data = get_json(:url => "passwd", :key => 'cpsess6131206390', :params => options)
+      check_for_cpanel_errors_on(data)["passwd"]
     end
-    
+
     # Changes the hosting package associated with an account.
     # Returns <tt>true</tt> if it is successful, or 
     # <tt>false</tt> if it is not.
@@ -133,13 +133,13 @@ module Whm #:nodoc:
     # * <tt>:pkg</tt> - Name of the package that the account should use (string)
     def change_package(options = {})
       requires!(options, :user, :pkg)
-      
-      data = get_xml(:url => "changepackage", :params => options)
+
+      data = get_json(:url => "changepackage", :key => 'cpsess6131206390', :params => options)
       check_for_cpanel_errors_on(data)
-      
+
       data["status"] == "1" ? true : false
     end
-    
+
     # Creates a hosting account and sets up it's associated domain information.
     #
     # ==== Options
@@ -171,11 +171,11 @@ module Whm #:nodoc:
     # * <tt>:reseller</tt> - Give reseller privileges to the account (boolean)
     def create_account(options = {})
       requires!(options, :username)
-      
-	    data = get_xml(:url => "createacct", :params => options)
-	    check_for_cpanel_errors_on(data)
+
+      data = get_json(:url => "createacct", :key => 'cpsess6131206390', :params => options)
+      check_for_cpanel_errors_on(data)
     end
-    
+
     # Generates an SSL certificate
     #
     # ==== Options
@@ -190,16 +190,16 @@ module Whm #:nodoc:
     # * <tt>:pass</tt> - Certificate password (string)
     def generate_ssl_certificate(options = {})
       requires!(options, :city, :co, :cod, :country, :email, :host, :pass, :state, :xemail)
-      data = get_xml(:url => "generatessl", :params => options)
+      data = get_json(:url => "generatessl", :key => 'cpsess6131206390', :params => options)
       check_for_cpanel_errors_on(data)
     end
-    
+
     # Displays the server's hostname.
-    def hostname      
-      data = get_xml(:url => "gethostname")
+    def hostname
+      data = get_json(:url => "gethostname", :key => 'cpsess6131206390')
       check_for_cpanel_errors_on(data)["hostname"]
     end
-    
+
     # Modifies the bandwidth usage (transfer) limit for a specific account.
     #
     # ==== Options
@@ -207,11 +207,11 @@ module Whm #:nodoc:
     # * <tt>:bwlimit</tt> - Bandwidth usage (transfer) limit in MB (string)
     def limit_bandwidth_usage(options = {})
       requires!(options, :user, :bwlimit)
-      
-      data = get_xml(:url => "limitbw", :params => options)
+
+      data = get_json(:url => "limitbw", :key => 'cpsess6131206390', :params => options)
       check_for_cpanel_errors_on(data)["bwlimit"]
     end
-    
+
     # Lists all accounts on the server, or allows you to search for 
     # a specific account or set of accounts.
     #
@@ -219,19 +219,19 @@ module Whm #:nodoc:
     # * <tt>:searchtype</tt> - Type of account search (<tt>"domain"</tt>, <tt>"owner"</tt>, <tt>"user"</tt>, <tt>"ip"</tt> or <tt>"package"</tt>)
     # * <tt>:search</tt> - Search criteria, in Perl regular expression format (string)
     def list_accounts(options = {})
-      data = get_xml(:url => "listaccts", :params => options)
+      data = get_json(:url => "listaccts", :key => 'cpsess6131206390', :params => options)
       check_for_cpanel_errors_on(data)["acct"]
     end
-    
+
     # Lists all hosting packages that are available for use by 
     # the current WHM user. If the current user is a reseller, 
     # they may not see some packages that exist if those packages 
     # are not available to be used for account creation at this time.
     def list_packages
-      data = get_xml(:url => "listpkgs")
+      data = get_json(:url => "listpkgs", :key => 'cpsess6131206390')
       check_for_cpanel_errors_on(data)["package"]
     end
-    
+
     # Modifies account specific settings. We recommend changing the 
     # account's package instead with change_package. If the account 
     # is associated with a package, the account's settings will be 
@@ -254,14 +254,14 @@ module Whm #:nodoc:
     # * <tt>:user</tt> - User name of the account (string)
     def modify_account(options = {})
       booleans!(options, :HASCGI, :LANG, :shell)
-      requires!(options, :user, :domain, :HASCGI, :CPTHEME, :LANG, :MAXPOP, :MAXFTP, :MAXLST, :MAXSUB, 
-        :MAXPARK, :MAXADDON, :MAXSQL, :shell)
-        
-      data = get_xml(:url => "modifyacct", :params => options)
-      
+      requires!(options, :user, :domain, :HASCGI, :CPTHEME, :LANG, :MAXPOP, :MAXFTP, :MAXLST, :MAXSUB,
+                :MAXPARK, :MAXADDON, :MAXSQL, :shell)
+
+      data = get_json(:url => "modifyacct", :key => 'cpsess6131206390', :params => options)
+
       check_for_cpanel_errors_on(data)
     end
-    
+
     # Suspend an account. Returns <tt>true</tt> if it is successful, 
     # or <tt>false</tt> if it is not.
     #
@@ -270,13 +270,13 @@ module Whm #:nodoc:
     # * <tt>:reason</tt> - Reason for suspension (string)
     def suspend_account(options = {})
       requires!(options, :user, :reason)
-      
-      data = get_xml(:url => "suspendacct", :params => options)
+
+      data = get_json(:url => "suspendacct", :key => 'cpsess6131206390', :params => options)
       check_for_cpanel_errors_on(data)
-      
+
       data["status"] == "1" ? true : false
     end
-    
+
     # Terminates a hosting account. <b>Please note that this action is irreversible!</b>
     #
     # ==== Options
@@ -284,15 +284,15 @@ module Whm #:nodoc:
     # * <tt>:keepdns</tt> - Keep DNS entries for the domain ("y" or "n")
     def terminate_account(options = {})
       requires!(options, :user)
-            
-      data = get_xml(:url => "removeacct", :params => {
-        :user => options[:user], 
-        :keepdns => options[:keepdns] || "n"
+
+      data = get_json(:url => "removeacct", :key => 'cpsess6131206390', :params => {
+          :user => options[:user],
+          :keepdns => options[:keepdns] || "n"
       })
-      
+
       check_for_cpanel_errors_on(data)
     end
-    
+
     # Unsuspend a suspended account. Returns <tt>true</tt> if it
     # is successful, or <tt>false</tt> if it is not.
     #
@@ -300,57 +300,58 @@ module Whm #:nodoc:
     # * <tt>:user</tt> - Username to unsuspend (string)
     def unsuspend_account(options = {})
       requires!(options, :user)
-      
-      data = get_xml(:url => "unsuspendacct", :params => options)
+
+      data = get_json(:url => "unsuspendacct", :key => 'cpsess6131206390', :params => options)
       check_for_cpanel_errors_on(data)
-      
+
       data["status"] == "1" ? true : false
     end
-    
+
     # Returns the cPanel WHM version.
-    def version    
-      data = get_xml(:url => 'version')
+    def version
+      data = get_json(:url => 'version', :key => 'cpsess6131206390')
       check_for_cpanel_errors_on(data)["version"]
     end
-    
+
     private
-    
-    # Grabs the XML response for a command to the server, and parses it.
+
+    # Grabs the JSON response for a command to the server, and parses it.
     #
     # ==== Options
-    # * <tt>:url</tt> - URL of the XML API function (string)
+    # * <tt>:url</tt> - URL of the JSON API function (string)
     # * <tt>:params</tt> - Passed in parameter hash (hash)
-    def get_xml(options = {}) 
+    def get_json(options = {})
       requires!(options, :url)
-      
+      requires!(options, :key)
+
       prefix = @ssl ? "https" : "http"
       params = []
-      
+
       unless options[:params].nil?
         for key, value in options[:params]
           params << Curl::PostField.content(key.to_s, value)
         end
       end
-      
-      request = Curl::Easy.new("#{prefix}://#{@host}:#{@port}/xml-api/#{options[:url]}") do |connection|
+
+      request = Curl::Easy.new("#{prefix}://#{@host}:#{@port}/#{options[:key]}/json-api/#{options[:url]}") do |connection|
         puts "WHM: Requesting #{options[:url]}..." if @debug
-        
+
         connection.userpwd = "#{@username}:#{@password}" if @password
         connection.headers["Authorization"] = "WHM #{@username}:#{@remote_key}" if @remote_key
         connection.verbose = true if @debug
         connection.timeout = 60
       end
-          
+
       if request.http_post(params)
         puts "Response: #{request.body_str}" if @debug
-        xml = XmlSimple.xml_in(request.body_str, { 'ForceArray' => false })
+        xml = XmlSimple.xml_in(request.body_str, {'ForceArray' => false})
         xml["result"].nil? ? xml : xml["result"]
       end
     end
-    
+
     # Returns the data, unless a <tt>status</tt> is equal to <tt>0</tt>,
     # in which case a CommandFailedError exception is 
-    # thrown with the <tt>statusmsg</tt> from the fetched XML.
+    # thrown with the <tt>statusmsg</tt> from the fetched JSON.
     #
     # If the command does not support status messaging,
     # then just return the raw data.
@@ -362,8 +363,8 @@ module Whm #:nodoc:
         result
       end
     end
-    
-    def build_account(attributes)  #:nodoc:
+
+    def build_account(attributes) #:nodoc:
       account = Account.new(attributes)
       account.server = self
       account

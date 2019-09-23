@@ -1,7 +1,7 @@
 module Whm #:nodoc:
   # Allows for parameter requirements and validations for methods
   module Parameters
-    # Check the included hash for the included parameters, and ensure they aren't blank.
+    # Check the included hash for the included parameters, and ensure they aren't empty.
     #
     # ==== Example
     # 
@@ -20,10 +20,10 @@ module Whm #:nodoc:
       params.each do |param| 
         if param.is_a?(Array)
           raise ArgumentError.new("Missing required parameter: #{param.first}") unless hash.has_key?(param.first) 
-          raise ArgumentError.new("Required parameter cannot be blank: #{param.first}") if hash[param.first].blank?
+          raise ArgumentError.new("Required parameter cannot be empty: #{param.first}") if hash[param.first].empty?
         else
           raise ArgumentError.new("Missing required parameter: #{param}") unless hash.has_key?(param) 
-          raise ArgumentError.new("Required parameter cannot be blank: #{param}") if hash[param].blank?
+          raise ArgumentError.new("Required parameter cannot be empty: #{param}") if hash[param].empty?
         end
       end
     end
